@@ -1,7 +1,4 @@
-# Ethereum ICO Crowdsale Contract  [![Build Status](https://travis-ci.org/hunterlong/ethereum-ico-contract.svg?branch=master)](https://travis-ci.org/hunterlong/ethereum-ico-contract)
-
-This is a basic example of a crowdsale with a brand new ERC20 token. First deploy the Sale contract, and then the ERC20 token contract. The ERC20 contract will require the Sale Contract etheruem address.
-
+# Ethereum ICO Crowdsale Contract 
 ## Contract Details
 - Creates/Mints 5 million Tokens and holds them inside contract.
 - ERC20 and Sale Contract both reference eachother

@@ -142,7 +142,6 @@ contract('Sale', function(accounts) {
         assert.notEqual(balance.valueOf(), 11999900001000, "Tokens were released to founder");
       })
     });
-
   });
 
   it("should change TOKEN/ETH rate", function() {
