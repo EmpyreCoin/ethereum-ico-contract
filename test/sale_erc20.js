@@ -1,3 +1,4 @@
+var Ownable = artifacts.require("./Ownable.sol");
 var Sale = artifacts.require("./Sale.sol");
 var Token = artifacts.require("./Token.sol");
 
@@ -19,10 +20,18 @@ contract('Sale', function(accounts) {
 
   var cn;
 
+  it("should set up the ownable contract", function() {
+    return Ownable.deployed().then(function(instance) { 
+      return instance.owner.call()
+    }).then(function(address) {
+      assert.equal(address, "0x627306090abab3a6e1400e9345bc60c78a8bef57");
+    })
+  })
+
   it("should setup the wallet", function() {
     return Sale.deployed().then(function(instance) {
       cn = instance;
-      return instance.setup(tokenAddress, 50000, {from: account_one});
+      return instance.setup(tokenAddress, 50000, {from: "0x627306090abab3a6e1400e9345bc60c78a8bef57"});
     });
   });
 
@@ -37,7 +46,7 @@ contract('Sale', function(accounts) {
 
   it("should contribute some ETH", function() {
     return Sale.deployed().then(function(instance) {
-      return instance.contribute({from: account_one, value: 20000000000})
+      return instance.contribute({from: "0x627306090abab3a6e1400e9345bc60c78a8bef57", value: 20000000000})
     }).then(function(tx) {
       assert.equal(tx.logs[0].event, "Contribution", "Transfer ETH to confirmed");
     })
@@ -71,21 +80,69 @@ contract('Sale', function(accounts) {
       })
   });
 
-  it("should transfer Tokens to someone else", function() {
-    return Token.deployed().then(function(instance) {
-      return instance.transfer(account_two, 100000000, {from: account_one})
-    }).then(function(tx) {
-      assert.equal(tx.logs[0].event, "Transfer", "Transfer Tokens confirmed");
-    })
+  describe('Transfer is enabled', function() {
+    beforeEach(function() {
+      return Token.deployed().then(function(instance) {
+        return instance.enableTransfer();
+      });
+    });
+
+    it("should not transfer Tokens to someone else", function() {
+      return Token.deployed().then(function(instance) {
+        return instance.transfer(account_two, 100000000, {from: account_one})
+      }).then(function(tx) {
+        assert.equal(tx.logs[0].event, "Transfer", "Transfer Tokens confirmed");
+      })
+    });
+
+    it("second address has TOKENs in wallet", function() {
+      return Token.deployed().then(function(instance) {
+        return instance.balanceOf.call(account_two)
+      }).then(function(balance) {
+        assert.equal(balance.valueOf(), 100000000, "Second wallet has some Tokens");
+      })
+    });
+
+    it("should release held tokens to founders", function() {
+      return Sale.deployed().then(function(instance) {
+        return instance.releaseHeldCoins({from: account_one})
+      }).then(function() {
+        return Tokenint.balanceOf.call(account_one)
+      }).then(function(balance) {
+        assert.equal(balance.valueOf(), 11999900001000, "Tokens were released to founder");
+      })
+    });
+
   });
+  
+  describe('Transfer is disabled', function() {
 
+    it("should not transfer Tokens to someone else", function() {
+      return Token.deployed().then(function(instance) {
+        return instance.transfer(account_two, 100000000, {from: account_one})
+      }).catch(function(error) {
+        console.log("expected vm exception");
+      })
+    });
 
-  it("second address has TOKENs in wallet", function() {
-    return Token.deployed().then(function(instance) {
-      return instance.balanceOf.call(account_two)
-    }).then(function(balance) {
-      assert.equal(balance.valueOf(), 100000000, "Second wallet has some Tokens");
-    })
+    it("second address has TOKENs in wallet", function() {
+      return Token.deployed().then(function(instance) {
+        return instance.balanceOf.call(account_two)
+      }).then(function(balance) {
+        assert.notEqual(balance.valueOf(), 100000000, "Second wallet has some Tokens");
+      })
+    });
+
+    it("should release held tokens to founders", function() {
+      return Sale.deployed().then(function(instance) {
+        return instance.releaseHeldCoins({from: account_one})
+      }).then(function() {
+        return Tokenint.balanceOf.call(account_one)
+      }).then(function(balance) {
+        assert.notEqual(balance.valueOf(), 11999900001000, "Tokens were released to founder");
+      })
+    });
+
   });
 
   it("should change TOKEN/ETH rate", function() {
@@ -150,17 +207,6 @@ contract('Sale', function(accounts) {
       }).then(function(held) {
           assert.equal(held.valueOf(), 1000, "Tokens that are held for address");
       })
-  });
-
-
-  it("should release held tokens to founders", function() {
-    return Sale.deployed().then(function(instance) {
-      return instance.releaseHeldCoins({from: account_one})
-    }).then(function() {
-      return Tokenint.balanceOf.call(account_one)
-    }).then(function(balance) {
-      assert.equal(balance.valueOf(), 11999900001000, "Tokens were released to founder");
-    })
   });
 
 });

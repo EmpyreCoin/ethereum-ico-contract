@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.18;
 
 /*
 
@@ -7,10 +7,6 @@ pragma solidity ^0.4.21;
   Create this Sale contract first!
 
      Sale(address ethwallet)   // this will send the received ETH funds to this address
-
-
-  @author Hunter Long
-  @repo https://github.com/hunterlong/ethereum-ico-contract
 
 */
 

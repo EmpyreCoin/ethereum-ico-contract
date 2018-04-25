@@ -1,5 +1,6 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.18;
 
+import "./Ownable.sol";
 
 /*
 
@@ -8,9 +9,6 @@ BASIC ERC20 Crowdsale ICO ERC20 Token
 Create this Token contract AFTER you already have the Sale contract created.
 
    Token(address sale_address)   // creates token and links the Sale contract
-
-@author Hunter Long
-@repo https://github.com/hunterlong/ethereum-ico-contract
 
 */
 
@@ -70,13 +68,22 @@ contract StandardToken is BasicToken {
 }
 
 
-contract Token is StandardToken {
+contract Token is StandardToken, Ownable {
 
-    string public name = "BASIC ERC20 SALE";
+    string public name = "Empyre";
     uint8 public decimals = 18;
-    string public symbol = "BASIC";
-    string public version = 'BASIC 0.1';
+    string public symbol = "EMPR";
+    string public version = 'EMPR 0.1';
+    uint256 public constant INITIAL_SUPPLY = 1000000000 * (10 ** uint256(decimals));
     address public mintableAddress;
+    
+    // Enable transfers after conclusion of token offering
+    bool public transferEnabled = false;
+
+    modifier onlyWhenTransferAllowed() {
+        require(transferEnabled);
+        _;
+    }
 
     function Token(address sale_address) {
         balances[msg.sender] = 0;
@@ -93,9 +100,16 @@ contract Token is StandardToken {
     // this address will hold all tokens
     // all community contrubutions coins will be taken from this address
     function createTokens() internal {
-        uint256 total = 5000000000000000000000000;
+        uint256 total = INITIAL_SUPPLY;
         balances[this] = total;
         totalSupply = total;
+    }
+
+    /**
+     * Enable transfers
+     */
+    function enableTransfer() external onlyOwner {
+        transferEnabled = true;
     }
 
     function changeTransfer(bool allowed) external {
@@ -103,7 +117,22 @@ contract Token is StandardToken {
         allowTransfer = allowed;
     }
 
-    function mintToken(address to, uint256 amount) external returns (bool success) {
+    function transfer(address to, uint256 value) public onlyWhenTransferAllowed returns (bool) {
+        return super.transfer(to, value);
+    }
+
+    /**
+     * Transfer from `from` account to `to` account using allowance in `from` account to the sender
+     *
+     * @param from Origin address
+     * @param to Destination address
+     * @param value Amount of docks to send
+     */
+    function transferFrom(address from, address to, uint256 value) public onlyWhenTransferAllowed returns (bool) {
+        return super.transferFrom(from, to, value);
+    }
+
+    function mintToken(address to, uint256 amount) returns (bool success) {
         require(msg.sender == mintableAddress);
         require(balances[this] >= amount);
         balances[this] -= amount;
@@ -116,7 +145,7 @@ contract Token is StandardToken {
         allowed[msg.sender][_spender] = _value;
         Approval(msg.sender, _spender, _value);
 
-        require(_spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData));
+        require(_spender.call(bytes4(bytes32(keccak256("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData));
         return true;
     }
 }
