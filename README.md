@@ -1,9 +1,9 @@
 # Ethereum ICO Crowdsale Contract 
 ## Contract Details
 - Creates/Mints 1 billion EMPR tokens and holds them inside contract.
-- ERC20 and Sale Contract both reference eachother
+- ERC20 and Sale Contract both reference each other
 - Converts payable ETH to EMPR's directly to user
-- ETH paid to contract is forwarded to a different wallet (holds ICO funds)
+- ETH paid to the contract is forwarded to a different wallet (holds ICO funds)
 - EMPR tokens cannot be transferred from user wallets unless contract enables transfer
 - Updateable ETH/EMPR rate
 - Developers and Founders can allocate a specific amount of tokens to be released at later date.
